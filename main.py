@@ -1,23 +1,17 @@
 import os
 from fastapi import FastAPI
 
-app = FastAPI(title="Demo Trunk-Based e Feature Flags")
+app = FastAPI()
 
-def is_feature_enabled(flag_name: str) -> bool:
-    return os.getenv(flag_name, "False") == "True"
+@app.get("/checkout")
+def calcular_checkout(preco: float):
+    # Lê a chave do ambiente. Se não existir, fica desligada ("false")
+    desconto_ativo = os.getenv("ATIVAR_DESCONTO", "false").lower() == "true"
 
-@app.get("/produtos")
-def listar_produtos():
-    # Avalia a flag em tempo de execução, sem precisar reiniciar o processo
-    if is_feature_enabled("FEATURE_NOVO_ALGORITMO"):
-        return {
-            "status": "sucesso",
-            "versao_fluxo": "Novo Fluxo v2 (Ativado via Flag)",
-            "produtos": ["Notebook Gamer", "Monitor Ultrawide", "Cadeira Ergonômica"]
-        }
-    
-    return {
-        "status": "sucesso",
-        "versao_fluxo": "Fluxo Estável v1 (Padrão)",
-        "produtos": ["Teclado Padrão", "Mouse Óptico", "Monitor 15 polegadas"]
-    }
+    if desconto_ativo:
+        # Código novo: JÁ ESTÁ NA MAIN, mas só roda quando a chave for ligada
+        preco_final = preco * 0.80
+        return {"preco_original": preco, "desconto": "20%", "preco_final": preco_final}
+
+    # Código antigo: O que o cliente vê hoje em produção
+    return {"preco_original": preco, "desconto": "0%", "preco_final": preco}
